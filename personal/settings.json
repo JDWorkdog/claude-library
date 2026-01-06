@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "SessionStart": {
+      "command": "~/.claude/hooks/session-start.sh",
+      "description": "Validate environment on session start"
+    },
+    "PreToolUse": [
+      {
+        "command": "~/.claude/hooks/pre-bash-safety.sh",
+        "description": "Warn before dangerous bash commands",
+        "toolFilter": ["Bash"]
+      },
+      {
+        "command": "~/.claude/hooks/pre-write-safety.sh",
+        "description": "Warn before writing protected files",
+        "toolFilter": ["Write", "Edit"]
+      }
+    ]
+  }
+}

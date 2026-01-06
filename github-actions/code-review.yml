@@ -1,0 +1,62 @@
+# Claude Library - Automated Code Review Workflow
+# Add this to your project's .github/workflows/ directory
+
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run Code Review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          claude-code --print "Review these changed files for:
+          - Code quality and best practices
+          - Potential bugs or issues
+          - Security concerns
+          - Performance implications
+
+          Changed files: ${{ steps.changed-files.outputs.all_changed_files }}
+
+          Provide feedback with severity levels (critical, warning, suggestion)."
+
+      - name: Post Review Comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Post review results as PR comment
+            const output = process.env.REVIEW_OUTPUT || 'Review completed';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🤖 Claude Code Review\n\n${output}`
+            });

@@ -1,0 +1,48 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Credentials (never commit these)
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Node modules (if any scripts use node)
+node_modules/
+
+# Python (if any scripts use python)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Test outputs
+coverage/
+.nyc_output/
+
+# Build artifacts
+dist/
+build/
+
+# Local configuration overrides
+*.local.json
+*.local.yaml
+*.local.yml
