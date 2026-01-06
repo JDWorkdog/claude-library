@@ -156,6 +156,40 @@ Simply delete or rename the agent file:
 mv ~/.claude/agents/some-agent.md ~/.claude/agents/some-agent.md.disabled
 ```
 
+## GitHub Actions
+
+The `github-actions/` folder contains workflow templates for CI/CD automation with Claude Code.
+
+### Installing a Workflow
+
+Copy the desired workflow to your project's `.github/workflows/` directory:
+
+```bash
+# Copy a single workflow
+cp claude-library/github-actions/code-review.yml your-project/.github/workflows/
+
+# Or copy all workflows
+cp claude-library/github-actions/*.yml your-project/.github/workflows/
+```
+
+### Available Workflows
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| `code-review.yml` | PR to main/develop | Automated code review with severity levels |
+| `security-scan.yml` | PR, weekly schedule | Security vulnerability scanning |
+| `test-coverage.yml` | PR, push | Test execution and coverage reporting |
+| `claude-assistant.yml` | @claude mention | Respond to mentions in PRs/issues |
+
+### Required Secrets
+
+All workflows require the `ANTHROPIC_API_KEY` secret. Add it to your repository:
+
+1. Go to your repo → Settings → Secrets and variables → Actions
+2. Click "New repository secret"
+3. Name: `ANTHROPIC_API_KEY`
+4. Value: Your Anthropic API key
+
 ## Project Templates
 
 ### Installing a Template
