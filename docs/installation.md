@@ -180,6 +180,7 @@ cp claude-library/github-actions/*.yml your-project/.github/workflows/
 | `security-scan.yml` | PR, weekly schedule | Security vulnerability scanning |
 | `test-coverage.yml` | PR, push | Test execution and coverage reporting |
 | `claude-assistant.yml` | @claude mention | Respond to mentions in PRs/issues |
+| `issue-worker.yml` | Issue created/labeled | Auto-implement issues created via `/issue` command |
 
 ### Required Secrets
 
@@ -189,6 +190,31 @@ All workflows require the `ANTHROPIC_API_KEY` secret. Add it to your repository:
 2. Click "New repository secret"
 3. Name: `ANTHROPIC_API_KEY`
 4. Value: Your Anthropic API key
+
+### Issue Worker Setup
+
+The `issue-worker.yml` workflow requires additional labels in your repository for state management.
+
+**Create the required labels:**
+
+```bash
+# Run these commands in your project repository
+gh label create claude-autowork --color 0E8A16 --description "Trigger Claude to implement this issue"
+gh label create claude-dryrun --color 1D76DB --description "Claude analyzes but doesn't implement"
+gh label create claude-working --color FBCA04 --description "Claude is currently working on this"
+gh label create claude-implemented --color 0E8A16 --description "Claude created a PR for this issue"
+gh label create claude-failed --color D93F0B --description "Claude failed to implement this issue"
+```
+
+**How it works:**
+1. Create an issue using the `/issue` command (auto-adds `claude-autowork` label by default)
+2. The workflow triggers and adds `claude-working` label
+3. Claude analyzes the issue and posts an implementation plan
+4. If complexity is simple/moderate, Claude implements and creates a PR
+5. On success: `claude-implemented` label added, PR linked to issue
+6. On failure: `claude-failed` label added with error details
+
+**Dry-run mode:** Add `claude-dryrun` label (instead of `claude-autowork`) to get an analysis without implementation.
 
 ## Project Templates
 

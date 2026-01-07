@@ -1,0 +1,524 @@
+# Claude Library - Issue Worker Workflow
+# Automatically implements issues created via /issue command
+# Add this to your project's .github/workflows/ directory
+
+name: Claude Issue Worker
+
+on:
+  issues:
+    types: [opened, labeled]
+
+# Prevent concurrent runs for same issue
+concurrency:
+  group: issue-worker-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  CLAUDE_MARKER: "Created via Claude Code `/issue` command"
+  AUTOWORK_LABEL: "claude-autowork"
+  DRYRUN_LABEL: "claude-dryrun"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      should_process: ${{ steps.check.outputs.should_process }}
+      is_dryrun: ${{ steps.check.outputs.is_dryrun }}
+      issue_type: ${{ steps.check.outputs.issue_type }}
+    steps:
+      - name: Check trigger conditions
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const labels = issue.labels.map(l => l.name);
+
+            // Check for /issue command marker
+            const hasMarker = body.includes('Created via Claude Code `/issue` command');
+
+            // Check for required labels
+            const hasAutoworkLabel = labels.includes('claude-autowork');
+            const hasDryrunLabel = labels.includes('claude-dryrun');
+
+            // Check if already being worked on
+            const hasWorkingLabel = labels.includes('claude-working');
+            const hasImplementedLabel = labels.includes('claude-implemented');
+            const isAlreadyProcessed = hasWorkingLabel || hasImplementedLabel;
+
+            // Determine issue type from labels
+            const typeLabels = ['bug', 'enhancement', 'feature', 'documentation', 'task', 'refactor'];
+            const issueType = labels.find(l => typeLabels.includes(l.toLowerCase())) || 'task';
+
+            const shouldProcess = hasMarker && (hasAutoworkLabel || hasDryrunLabel) && !isAlreadyProcessed;
+
+            core.setOutput('should_process', shouldProcess);
+            core.setOutput('is_dryrun', hasDryrunLabel && !hasAutoworkLabel);
+            core.setOutput('issue_type', issueType);
+
+            console.log(`Marker found: ${hasMarker}`);
+            console.log(`Has autowork label: ${hasAutoworkLabel}`);
+            console.log(`Has dryrun label: ${hasDryrunLabel}`);
+            console.log(`Already processed: ${isAlreadyProcessed}`);
+            console.log(`Should process: ${shouldProcess}`);
+
+  analyze:
+    needs: validate
+    if: needs.validate.outputs.should_process == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      complexity: ${{ steps.analyze.outputs.complexity }}
+      plan: ${{ steps.analyze.outputs.plan }}
+      branch_name: ${{ steps.branch.outputs.branch_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Post starting comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isDryRun = '${{ needs.validate.outputs.is_dryrun }}' === 'true';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `## Claude Issue Worker
+
+            Starting analysis of this issue...
+
+            | Status | Details |
+            |--------|---------|
+            | Phase | Analyzing requirements |
+            | Mode | ${isDryRun ? 'Dry Run (plan only)' : 'Full Implementation'} |
+            | Issue Type | ${{ needs.validate.outputs.issue_type }} |
+
+            I'll post an update with my implementation plan shortly.`
+            });
+
+      - name: Add working label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              labels: ['claude-working']
+            });
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Analyze issue and create plan
+        id: analyze
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          ANALYSIS=$(claude-code --print "Analyze this GitHub issue and create an implementation plan.
+
+          Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
+
+          ${ISSUE_BODY}
+
+          Instructions:
+          1. Assess the complexity (simple, moderate, complex, needs-clarification)
+          2. List the files that need to be modified or created
+          3. Outline the implementation steps
+          4. Identify any blockers or questions
+
+          Format your response EXACTLY as follows (keep the exact labels):
+          COMPLEXITY: <simple|moderate|complex|needs-clarification>
+          FILES:
+          - file1.ts
+          - file2.ts
+          PLAN:
+          1. Step one
+          2. Step two
+          QUESTIONS:
+          - Any clarifying questions (or 'None')")
+
+          # Extract complexity
+          COMPLEXITY=$(echo "$ANALYSIS" | grep -oP '(?<=COMPLEXITY: )\w+' | head -1)
+          if [ -z "$COMPLEXITY" ]; then
+            COMPLEXITY="moderate"
+          fi
+
+          echo "complexity=$COMPLEXITY" >> $GITHUB_OUTPUT
+
+          # Use a delimiter for multiline output
+          EOF_MARKER=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          echo "plan<<$EOF_MARKER" >> $GITHUB_OUTPUT
+          echo "$ANALYSIS" >> $GITHUB_OUTPUT
+          echo "$EOF_MARKER" >> $GITHUB_OUTPUT
+
+      - name: Generate branch name
+        id: branch
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          # Convert to lowercase, replace spaces/special chars with hyphens
+          SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | cut -c1-50 | sed 's/-$//')
+          BRANCH_NAME="claude/issue-${ISSUE_NUMBER}-${SLUG}"
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Post analysis comment
+        uses: actions/github-script@v7
+        env:
+          COMPLEXITY: ${{ steps.analyze.outputs.complexity }}
+          PLAN: ${{ steps.analyze.outputs.plan }}
+          BRANCH_NAME: ${{ steps.branch.outputs.branch_name }}
+          IS_DRYRUN: ${{ needs.validate.outputs.is_dryrun }}
+        with:
+          script: |
+            const complexity = process.env.COMPLEXITY;
+            const plan = process.env.PLAN;
+            const branchName = process.env.BRANCH_NAME;
+            const isDryRun = process.env.IS_DRYRUN === 'true';
+
+            let statusEmoji = '';
+            let nextSteps = '';
+
+            if (complexity === 'needs-clarification') {
+              statusEmoji = '?';
+              nextSteps = 'Please answer the questions above, then remove and re-add the `claude-autowork` label to retry.';
+            } else if (complexity === 'complex') {
+              statusEmoji = '!';
+              nextSteps = 'This issue may be too complex for automated implementation. Consider breaking it into smaller issues, or manually implement.';
+            } else if (isDryRun) {
+              statusEmoji = '';
+              nextSteps = 'Dry run complete. Remove `claude-dryrun` and add `claude-autowork` label to implement.';
+            } else {
+              statusEmoji = '';
+              nextSteps = 'Proceeding with implementation...';
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `## ${statusEmoji} Implementation Plan
+
+            **Complexity Assessment**: ${complexity}
+
+            ${plan}
+
+            ---
+
+            **Next Steps**: ${nextSteps}
+
+            **Branch**: \`${branchName}\``
+            });
+
+  implement:
+    needs: [validate, analyze]
+    if: |
+      needs.validate.outputs.should_process == 'true' &&
+      needs.validate.outputs.is_dryrun != 'true' &&
+      needs.analyze.outputs.complexity != 'needs-clarification' &&
+      needs.analyze.outputs.complexity != 'complex'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config user.name "Claude Issue Worker"
+          git config user.email "claude-bot@users.noreply.github.com"
+
+      - name: Create feature branch
+        env:
+          BRANCH_NAME: ${{ needs.analyze.outputs.branch_name }}
+        run: |
+          git checkout -b "$BRANCH_NAME"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies (if applicable)
+        run: |
+          if [ -f "package.json" ]; then
+            npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts 2>/dev/null || true
+          fi
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Implement changes
+        id: implement
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          PLAN: ${{ needs.analyze.outputs.plan }}
+        run: |
+          claude-code --dangerously-skip-permissions "Implement the following GitHub issue.
+
+          Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
+
+          ${ISSUE_BODY}
+
+          Implementation Plan:
+          ${PLAN}
+
+          Instructions:
+          1. Follow the implementation plan
+          2. Write clean, well-documented code
+          3. Follow existing project conventions
+          4. Create or update tests if applicable
+          5. Do NOT modify unrelated files
+          6. Do NOT commit - I will handle committing
+
+          When done, summarize what was implemented."
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit changes
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          ISSUE_TYPE: ${{ needs.validate.outputs.issue_type }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          git add -A
+
+          # Map issue type to commit type
+          case "$ISSUE_TYPE" in
+            bug) COMMIT_TYPE="fix" ;;
+            enhancement|feature) COMMIT_TYPE="feat" ;;
+            documentation) COMMIT_TYPE="docs" ;;
+            refactor) COMMIT_TYPE="refactor" ;;
+            *) COMMIT_TYPE="chore" ;;
+          esac
+
+          git commit -m "$(cat <<EOF
+          ${COMMIT_TYPE}: ${ISSUE_TITLE}
+
+          Implements #${ISSUE_NUMBER}
+
+          Generated with Claude Issue Worker
+          EOF
+          )"
+
+      - name: Push branch
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          BRANCH_NAME: ${{ needs.analyze.outputs.branch_name }}
+        run: |
+          git push -u origin "$BRANCH_NAME"
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        id: create_pr
+        uses: actions/github-script@v7
+        env:
+          BRANCH_NAME: ${{ needs.analyze.outputs.branch_name }}
+          PLAN: ${{ needs.analyze.outputs.plan }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        with:
+          script: |
+            const branchName = process.env.BRANCH_NAME;
+            const plan = process.env.PLAN;
+            const issueTitle = process.env.ISSUE_TITLE;
+            const issueNumber = process.env.ISSUE_NUMBER;
+
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              head: branchName,
+              base: 'main',
+              body: `## Summary
+
+            Automated implementation of #${issueNumber}.
+
+            ## Implementation Plan
+
+            ${plan}
+
+            ## Testing
+
+            - [ ] Manual testing completed
+            - [ ] Automated tests pass (if applicable)
+
+            ## Notes for Reviewers
+
+            This PR was automatically generated by Claude Issue Worker. Please review carefully before merging.
+
+            ---
+
+            Generated with Claude Issue Worker
+            Closes #${issueNumber}`
+            });
+
+            core.setOutput('pr_number', pr.number);
+            core.setOutput('pr_url', pr.html_url);
+            return pr;
+
+      - name: Update issue with PR link
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ steps.create_pr.outputs.pr_number }}
+          PR_URL: ${{ steps.create_pr.outputs.pr_url }}
+        with:
+          script: |
+            const prNumber = process.env.PR_NUMBER;
+            const prUrl = process.env.PR_URL;
+
+            // Remove working label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                name: 'claude-working'
+              });
+            } catch (e) {
+              // Label might not exist, ignore
+            }
+
+            // Add implemented label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              labels: ['claude-implemented']
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `## Implementation Complete
+
+            I've created a pull request with the implementation:
+
+            **PR**: #${prNumber}
+            **Link**: ${prUrl}
+
+            Please review the changes and merge when ready.
+
+            ---
+
+            Generated with Claude Issue Worker`
+            });
+
+      - name: Handle no changes
+        if: steps.changes.outputs.has_changes != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Remove working label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                name: 'claude-working'
+              });
+            } catch (e) {
+              // Label might not exist, ignore
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `## No Changes Made
+
+            I analyzed this issue but couldn't determine the necessary code changes.
+
+            This might be because:
+            - The issue requires more context or clarification
+            - The changes needed are outside my capabilities
+            - The implementation would require breaking changes
+
+            Please provide more details or consider implementing this manually.
+
+            ---
+
+            Generated with Claude Issue Worker`
+            });
+
+  cleanup-on-failure:
+    needs: [validate, analyze, implement]
+    if: failure() && needs.validate.outputs.should_process == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Remove working label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                name: 'claude-working'
+              });
+            } catch (e) {
+              // Label might not exist, ignore
+            }
+
+            // Add failed label
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              labels: ['claude-failed']
+            });
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `## Implementation Failed
+
+            I encountered an error while trying to implement this issue.
+
+            **Workflow run**: [View logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Please check the workflow logs for details. You may need to:
+            - Provide more context in the issue
+            - Break this into smaller issues
+            - Implement manually
+
+            ---
+
+            Generated with Claude Issue Worker`
+            });

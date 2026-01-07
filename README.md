@@ -58,7 +58,7 @@ This library provides reusable components for [Claude Code](https://claude.ai/co
 - `code-explanation/` - Explain code and architecture
 - `pr-creation/` - Create PRs with conventional commits
 
-### Commands (9 total)
+### Commands (10 total)
 
 | Command | Description |
 |---------|-------------|
@@ -71,6 +71,7 @@ This library provides reusable components for [Claude Code](https://claude.ai/co
 | `/daily` | Daily planning workflow |
 | `/research` | Research a topic |
 | `/prd` | Generate PRD document |
+| `/issue` | Create GitHub issue (auto-implements via GitHub Action) |
 
 ### Project Templates
 
@@ -88,6 +89,7 @@ This library provides reusable components for [Claude Code](https://claude.ai/co
 | `security-scan.yml` | PR, weekly schedule | Security vulnerability scan |
 | `test-coverage.yml` | PR, push | Test execution and coverage |
 | `claude-assistant.yml` | @claude mention | Respond to mentions in PRs/issues |
+| `issue-worker.yml` | Issue created/labeled | Auto-implement issues from `/issue` command |
 
 ## Documentation
 
