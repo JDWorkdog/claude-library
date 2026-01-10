@@ -60,24 +60,45 @@ chmod +x ~/.claude/plugins/ralph-wiggum/hooks/*.sh
 
 ### Step 4: Register the Plugin
 
-Add the plugin to your `~/.claude/settings.json`:
+Claude Code uses marketplaces to manage plugins. For a local plugin, you need to:
+1. Register a local marketplace pointing to your plugin
+2. Enable the plugin from that marketplace
+
+Add this to your `~/.claude/settings.json`:
 
 ```json
 {
-  "plugins": [
-    "~/.claude/plugins/ralph-wiggum"
-  ]
+  "enabledPlugins": {
+    "ralph-wiggum@local-plugins": true
+  },
+  "extraKnownMarketplaces": {
+    "local-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "~/.claude/plugins/ralph-wiggum"
+      }
+    }
+  }
 }
 ```
 
-If you already have a `settings.json`, merge the `plugins` array:
+If you already have a `settings.json`, merge these fields with your existing configuration. For example, if you already have `enabledPlugins`, add the new entry to it:
 
-```bash
-# View current settings
-cat ~/.claude/settings.json
-
-# Edit to add the plugin
-# (or use jq if you have it installed)
+```json
+{
+  "enabledPlugins": {
+    "existing-plugin@some-marketplace": true,
+    "ralph-wiggum@local-plugins": true
+  },
+  "extraKnownMarketplaces": {
+    "local-plugins": {
+      "source": {
+        "source": "directory",
+        "path": "~/.claude/plugins/ralph-wiggum"
+      }
+    }
+  }
+}
 ```
 
 ### Step 5: Verify Installation
@@ -101,7 +122,7 @@ You should see the `/ralph-loop` and `/cancel-ralph` commands listed.
 │       ├── hooks/               # stop-hook.sh
 │       ├── scripts/             # Utility scripts
 │       └── README.md
-├── settings.json                # Contains plugins array
+├── settings.json                # Contains enabledPlugins and extraKnownMarketplaces
 └── ... (other configuration)
 ```
 
@@ -130,8 +151,9 @@ chmod +x ~/.claude/plugins/ralph-wiggum/hooks/*.sh
 ### Commands Not Recognized
 
 1. Restart Claude Code completely
-2. Verify the plugin path in settings.json is correct
+2. Verify `enabledPlugins` and `extraKnownMarketplaces` are correctly configured in settings.json
 3. Check the plugin directory exists: `ls ~/.claude/plugins/ralph-wiggum`
+4. Verify the symlink is valid: `ls -la ~/.claude/plugins/ralph-wiggum`
 
 ### Permission Denied on Hooks
 
@@ -167,7 +189,9 @@ rm -rf ~/.claude/plugins/ralph-wiggum
 
 ### Remove from Settings
 
-Edit `~/.claude/settings.json` and remove the plugin from the `plugins` array.
+Edit `~/.claude/settings.json` and:
+1. Remove `"ralph-wiggum@local-plugins": true` from `enabledPlugins`
+2. Optionally remove the `local-plugins` entry from `extraKnownMarketplaces` if not using it for other plugins
 
 ### Remove Source (Optional)
 
