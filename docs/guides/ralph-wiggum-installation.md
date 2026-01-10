@@ -23,12 +23,14 @@ In any Claude Code session, run:
 ### Step 3: Verify Installation
 
 ```
-/ralph-loop:help
+@ralph-loop --help
 ```
 
 You should see the available commands:
-- `/ralph-loop:ralph-loop <prompt>` - Start a loop
-- `/ralph-loop:cancel-ralph` - Cancel an active loop
+- `@ralph-loop "<prompt>"` - Start a loop
+- `@cancel-ralph` - Cancel an active loop
+
+> **Note:** Use the `@` prefix (not `/`) when invoking MCP tools from terminal.
 
 That's it! The plugin is now available in all your Claude Code sessions.
 

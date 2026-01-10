@@ -39,7 +39,7 @@ Claude reads its own previous work and continues from where it left off.
 
 Ralph Wiggum uses Claude Code's **Stop hook** mechanism:
 
-1. You run `/ralph-loop "Build feature X" --completion-promise "DONE"`
+1. You run `@ralph-loop "Build feature X" --completion-promise "DONE"`
 2. Claude works on the task
 3. Claude tries to exit (task complete or stuck)
 4. The Stop hook intercepts the exit
@@ -66,7 +66,7 @@ Iteration N: Claude reads SAME prompt, all criteria met, outputs "DONE"
 A specific phrase that signals task completion:
 
 ```bash
-/ralph-loop "Build a REST API. Output <promise>COMPLETE</promise> when done." \
+@ralph-loop "Build a REST API. Output <promise>COMPLETE</promise> when done." \
   --completion-promise "COMPLETE"
 ```
 

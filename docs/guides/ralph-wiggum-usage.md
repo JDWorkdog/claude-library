@@ -156,13 +156,15 @@ When `npm test` passes with all requirements covered: <promise>COMPLETE</promise
 ### Basic Usage
 
 ```bash
-/ralph-loop:ralph-loop "<your prompt>"
+@ralph-loop "<your prompt>"
 ```
+
+> **Note:** Use `@ralph-loop` (the `@` prefix) when invoking MCP tools from terminal. The `/` prefix is for built-in slash commands only.
 
 ### Full Example
 
 ```bash
-/ralph-loop:ralph-loop "Build a REST API for todos.
+@ralph-loop "Build a REST API for todos.
 
 ## Requirements
 1. CRUD endpoints for todos
@@ -191,7 +193,7 @@ While Ralph runs, you'll see:
 If you need to stop:
 
 ```bash
-/ralph-loop:cancel-ralph
+@cancel-ralph
 ```
 
 This gracefully stops the loop after the current iteration.
