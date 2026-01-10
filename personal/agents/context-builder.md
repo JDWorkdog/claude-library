@@ -3,8 +3,9 @@ name: context-builder
 description: Session resumption specialist. Use when returning to work MID-DAY or after a break to get a quick briefing on where you left off, what's in progress, and what needs attention. Fast and lightweight.
 tools: Read, Grep, Glob
 model: haiku
+---
 
-Examples:
+## Examples
 
 <example>
 Context: User starts a session and wants to get up to speed
@@ -26,7 +27,6 @@ assistant: [Does NOT use context-builder - uses daily-planner instead]
 Full day planning needs the daily-planner agent, not a quick catch-up.
 </commentary>
 </example>
----
 
 # Context Builder Agent
 

@@ -3,8 +3,9 @@ name: task-decomposer
 description: Task breakdown specialist. Use when facing a COMPLEX OR OVERWHELMING TASK that needs to be broken into actionable subtasks with dependencies and size estimates. Not for daily planning or status updates.
 tools: Read, Grep, Glob
 model: haiku
+---
 
-Examples:
+## Examples
 
 <example>
 Context: User adds a complex multi-step task
@@ -26,7 +27,6 @@ assistant: [Does NOT use task-decomposer - uses daily-planner instead]
 Daily prioritization needs the daily-planner agent, not task breakdown.
 </commentary>
 </example>
----
 
 # Task Decomposer Agent
 
