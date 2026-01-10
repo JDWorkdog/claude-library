@@ -1,20 +1,37 @@
 {
   "hooks": {
-    "SessionStart": {
-      "command": "~/.claude/hooks/session-start.sh",
-      "description": "Validate environment on session start"
-    },
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
-        "command": "~/.claude/hooks/pre-bash-safety.sh",
-        "description": "Warn before dangerous bash commands",
-        "toolFilter": ["Bash"]
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-bash-safety.sh"
+          }
+        ]
       },
       {
-        "command": "~/.claude/hooks/pre-write-safety.sh",
-        "description": "Warn before writing protected files",
-        "toolFilter": ["Write", "Edit"]
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-write-safety.sh"
+          }
+        ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "code-simplifier@claude-plugins-official": true
   }
 }
