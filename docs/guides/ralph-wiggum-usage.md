@@ -151,26 +151,18 @@ Implement feature X using test-driven development.
 When `npm test` passes with all requirements covered: <promise>COMPLETE</promise>
 ```
 
-## Running Ralph Wiggum
+## Running Ralph Loop
 
 ### Basic Usage
 
 ```bash
-/ralph-loop "<your prompt>" --completion-promise "<signal phrase>"
-```
-
-### With Iteration Limit (Recommended)
-
-Always set a maximum to prevent infinite loops:
-
-```bash
-/ralph-loop "<your prompt>" --completion-promise "COMPLETE" --max-iterations 30
+/ralph-loop:ralph-loop "<your prompt>"
 ```
 
 ### Full Example
 
 ```bash
-/ralph-loop "Build a REST API for todos.
+/ralph-loop:ralph-loop "Build a REST API for todos.
 
 ## Requirements
 1. CRUD endpoints for todos
@@ -183,7 +175,7 @@ Always set a maximum to prevent infinite loops:
 - npm test passes
 - npm run build succeeds
 
-Output <promise>DONE</promise> when complete." --completion-promise "DONE" --max-iterations 50
+Output COMPLETE when all verification passes."
 ```
 
 ### Monitoring Progress
@@ -199,7 +191,7 @@ While Ralph runs, you'll see:
 If you need to stop:
 
 ```bash
-/cancel-ralph
+/ralph-loop:cancel-ralph
 ```
 
 This gracefully stops the loop after the current iteration.
@@ -238,7 +230,7 @@ This gracefully stops the loop after the current iteration.
 
 ### Do
 
-- ✅ Set `--max-iterations` as a safety net
+- ✅ Set iteration limits as a safety net
 - ✅ Use automated verification (tests, builds, linters)
 - ✅ Start with a PRD for complex features
 - ✅ Break large tasks into phases
