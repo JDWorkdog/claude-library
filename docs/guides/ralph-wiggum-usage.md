@@ -6,20 +6,27 @@ This guide covers how to prepare your task, write effective prompts, and run Ral
 
 Ralph Wiggum works best with well-defined tasks. Preparation is key.
 
-### Step 1: Create a PRD (Recommended)
+### Step 1: Create a Ralph PRD (Recommended)
 
-For substantial features, start with a Product Requirements Document:
+For substantial features, use the Ralph-optimized PRD command:
 
 ```bash
-/prd user-authentication
+/ralph-prd user-authentication
 ```
 
-The `/prd` command will:
-1. Ask clarifying questions about your feature
-2. Generate a comprehensive PRD with requirements
-3. Save it as `prd-user-authentication.md`
+The `/ralph-prd` command will:
+1. Ask clarifying questions focused on verification and completion
+2. Generate a PRD with automated verification steps
+3. Include phased implementation with checkpoints
+4. Add explicit non-goals to prevent scope creep
+5. Save it as `ralph-prd-user-authentication.md`
 
-A good PRD gives Ralph clear success criteria to work toward.
+Then run with:
+```bash
+@ralph-loop "$(cat ralph-prd-user-authentication.md)"
+```
+
+A Ralph PRD differs from a standard `/prd` by including machine-verifiable completion criteria.
 
 ### Step 2: Define Clear Completion Criteria
 

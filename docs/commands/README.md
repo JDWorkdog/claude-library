@@ -19,6 +19,7 @@ Commands are shortcuts that expand into detailed prompts when invoked with a sla
 | [/daily](daily.md) | Start daily planning workflow | `/daily` |
 | [/research](research.md) | Research a topic | `/research "topic"` |
 | [/prd](prd.md) | Generate PRD document | `/prd "feature name"` |
+| [/ralph-prd](ralph-prd.md) | Generate PRD for Ralph Loop | `/ralph-prd "feature name"` |
 
 ## Development Commands
 
@@ -102,11 +103,29 @@ Researches a topic using web search and synthesis.
 
 ### /prd
 
-Generates a Product Requirements Document.
+Generates a Product Requirements Document for human review.
 
 ```
 /prd "User authentication"
 /prd "Dark mode feature"
+```
+
+### /ralph-prd
+
+Generates a PRD optimized for autonomous execution via Ralph Loop. Includes:
+- Automated verification steps
+- Phased implementation with checkpoints
+- Explicit non-goals to prevent scope creep
+- Machine-verifiable completion criteria
+
+```
+/ralph-prd "User authentication"
+/ralph-prd "REST API for todos"
+```
+
+After generation, run with:
+```
+@ralph-loop "$(cat ralph-prd-user-authentication.md)"
 ```
 
 ## Command File Format

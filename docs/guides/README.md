@@ -46,8 +46,18 @@ The Engineering Manager agent coordinates development tasks by delegating to spe
 - Multiple specialists need coordination
 - You want to review before committing
 
+## Related Commands
+
+| Command | Description |
+|---------|-------------|
+| `/ralph-prd` | Generate a PRD optimized for Ralph Loop execution |
+| `/prd` | Generate a standard PRD for human review |
+
+Use `/ralph-prd` when you plan to run the feature through Ralph Loop - it includes automated verification steps, phased implementation, and explicit completion criteria.
+
 ## Getting Started
 
 1. **New to both?** Start with the [Engineering Manager Guide](engineering-manager-guide.md) - it's simpler to use
 2. **Want autonomous execution?** Read the [Ralph Wiggum Overview](ralph-wiggum-overview.md) first
 3. **Ready to install Ralph?** Follow the [Installation Guide](ralph-wiggum-installation.md)
+4. **Planning a Ralph task?** Use `/ralph-prd` to generate an optimized PRD

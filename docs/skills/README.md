@@ -15,6 +15,7 @@ Skills are specialized capabilities that Claude can invoke to perform specific t
 | [security-audit](security-audit.md) | OWASP-based security scanning | "Run a security audit" |
 | [code-explanation](code-explanation.md) | Explain code and architecture | "Explain this code..." |
 | [pr-creation](pr-creation.md) | Create PRs with conventional commits | "Create a PR for..." |
+| [ralph-prd](ralph-prd.md) | Generate PRDs for Ralph Loop | "Create a Ralph PRD..." |
 
 ## Skill Details
 
@@ -67,6 +68,17 @@ Creates pull requests with:
 - Comprehensive PR descriptions
 - Summary of changes
 - Test plan checklist
+
+### ralph-prd
+
+Generates PRDs optimized for Ralph Loop autonomous execution:
+- Automated verification steps (tests, builds, linters)
+- Phased implementation with checkpoints
+- Explicit non-goals to prevent scope creep
+- Machine-verifiable completion criteria
+- Completion signal for loop termination
+
+**Triggers:** "ralph", "autonomous", "iterative development", "Ralph PRD"
 
 ## How Skills Work
 

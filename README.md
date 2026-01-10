@@ -50,15 +50,16 @@ This library provides reusable components for [Claude Code](https://claude.ai/co
 | `pre-bash-safety.sh` | Warn before dangerous bash commands |
 | `pre-write-safety.sh` | Warn before writing to protected files |
 
-### Skills (5 total)
+### Skills (6 total)
 
 - `code-review/` - Comprehensive code review skill
 - `test-generation/` - Generate tests for TypeScript/React
 - `security-audit/` - OWASP-based security scanning
 - `code-explanation/` - Explain code and architecture
 - `pr-creation/` - Create PRs with conventional commits
+- `ralph-prd/` - Generate PRDs optimized for Ralph Loop
 
-### Commands (10 total)
+### Commands (11 total)
 
 | Command | Description |
 |---------|-------------|
@@ -71,6 +72,7 @@ This library provides reusable components for [Claude Code](https://claude.ai/co
 | `/daily` | Daily planning workflow |
 | `/research` | Research a topic |
 | `/prd` | Generate PRD document |
+| `/ralph-prd` | Generate PRD optimized for Ralph Loop |
 | `/issue` | Create GitHub issue (auto-implements via GitHub Action) |
 
 ### Project Templates
@@ -99,6 +101,29 @@ This library provides reusable components for [Claude Code](https://claude.ai/co
 - [Skills Documentation](docs/skills/README.md)
 - [Commands Documentation](docs/commands/README.md)
 - [Hooks Documentation](docs/hooks/README.md)
+- [Workflow Guides](docs/guides/README.md) - Ralph Loop, Engineering Manager
+
+### Ralph Loop (Autonomous Iteration)
+
+Ralph Loop is a Claude Code plugin for autonomous, iterative development. It feeds Claude the same prompt repeatedly until a task is complete, with each iteration building on previous work.
+
+| Guide | Description |
+|-------|-------------|
+| [Overview](docs/guides/ralph-wiggum-overview.md) | What it is, how it works, philosophy |
+| [Installation](docs/guides/ralph-wiggum-installation.md) | Install via official marketplace |
+| [Usage](docs/guides/ralph-wiggum-usage.md) | Preparing tasks, writing prompts |
+
+**Quick start:**
+```bash
+# 1. Install the plugin
+/plugin  # Search "ralph", install ralph-loop
+
+# 2. Create a Ralph-optimized PRD
+/ralph-prd "user authentication"
+
+# 3. Run the loop
+@ralph-loop "$(cat ralph-prd-user-authentication.md)"
+```
 
 ## Directory Structure
 
